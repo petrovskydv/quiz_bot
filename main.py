@@ -33,9 +33,11 @@ def main():
         if is_answer:
             answer_text = ' '.join([answer_text, string])
 
-    for question, answer in quiz.items():
-        pprint(question)
-        pprint(answer)
+    # for question, answer in quiz.items():
+    #     pprint(question)
+    #     pprint(answer)
+
+    return quiz
 
 
 if __name__ == '__main__':

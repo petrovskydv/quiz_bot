@@ -1,17 +1,20 @@
 import logging
 import os
+import random
+import main
 
+import telegram
 from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 from utils import TelegramBotHandler
 
 logger = logging.getLogger(__name__)
-
+QUIZ = main.main()
 
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Привет')
+    update.message.reply_text('Привет! Я бот для викторин')
 
 
 def help_command(bot, update):
@@ -21,7 +24,11 @@ def help_command(bot, update):
 
 def repeat_text(bot, update):
     """Echo the user message."""
-    update.message.reply_text(update.message.text)
+    custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счет']]
+    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
+    if update.message.text == 'Новый вопрос':
+        message_text = random.choice(list(QUIZ.keys()))
+        update.message.reply_text(message_text, reply_markup=reply_markup)
 
 
 def error_handler(bot, update, error):
