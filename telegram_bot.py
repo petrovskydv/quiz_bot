@@ -2,6 +2,7 @@ import logging
 import os
 import random
 import main
+import redis
 
 import telegram
 from dotenv import load_dotenv
@@ -11,6 +12,7 @@ from utils import TelegramBotHandler
 
 logger = logging.getLogger(__name__)
 QUIZ = main.main()
+
 
 def start(bot, update):
     """Send a message when the command /start is issued."""
@@ -42,6 +44,9 @@ def main():
     load_dotenv()
     telegram_token = os.environ['TELEGRAM_TOKEN']
     telegram_chat_id = os.environ['TELEGRAM_CHAT_ID']
+    radis_host = os.environ['RADIS_HOST']
+    radis_port = os.environ['RADIS_PORT']
+    database_connect = redis.Redis(host=radis_host, port=radis_port, db=0)
 
     logger_handler = TelegramBotHandler(telegram_token, telegram_chat_id)
     logger_handler.setLevel(logging.WARNING)
