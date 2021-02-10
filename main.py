@@ -31,12 +31,13 @@ def main():
         if is_question:
             question_text = ' '.join([question_text, string])
         if is_answer:
-            answer_text = ' '.join([answer_text, string])
+            answer_text = ' '.join([answer_text, string.strip()])
 
     # for question, answer in quiz.items():
     #     pprint(question)
     #     pprint(answer)
 
+    print('получили список вопросов')
     return quiz
 
 

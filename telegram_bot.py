@@ -1,13 +1,13 @@
 import logging
 import os
 import random
-import main
-import redis
 
 import telegram
 from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+import main
+from redis_db import db_connection
 from utils import TelegramBotHandler
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,20 @@ def repeat_text(bot, update):
     if update.message.text == 'Новый вопрос':
         message_text = random.choice(list(QUIZ.keys()))
         update.message.reply_text(message_text, reply_markup=reply_markup)
+        db_connection.set(update.message.from_user["id"], message_text)
+    else:
+        answer = update.message.text
+        question = db_connection.get(update.message.from_user["id"])
+        correct_answer = QUIZ[question].lower().strip()
+        correct_answer = correct_answer.split('.')[0]
+        correct_answer = correct_answer.split('(')[0].strip()
+        print(f'правильный ответ: {correct_answer}')
+        if answer.strip().lower() == correct_answer:
+            message_text = 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос"'
+        else:
+            message_text = 'Неправильно… Попробуешь ещё раз?'
+        update.message.reply_text(message_text, reply_markup=reply_markup)
+
 
 
 def error_handler(bot, update, error):
@@ -44,9 +58,6 @@ def main():
     load_dotenv()
     telegram_token = os.environ['TELEGRAM_TOKEN']
     telegram_chat_id = os.environ['TELEGRAM_CHAT_ID']
-    radis_host = os.environ['RADIS_HOST']
-    radis_port = os.environ['RADIS_PORT']
-    database_connect = redis.Redis(host=radis_host, port=radis_port, db=0)
 
     logger_handler = TelegramBotHandler(telegram_token, telegram_chat_id)
     logger_handler.setLevel(logging.WARNING)
