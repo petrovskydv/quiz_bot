@@ -2,7 +2,7 @@
 
 Этот бот задает вопросы и проверяет правильность ответов. 
 
-Бот работает с [Telegram](https://telegram.org/) и [ВКонтакте](https://vk.com/).
+Бот работает в [Telegram](https://t.me/denpet_bot) и [ВКонтакте](https://vk.com/club202188586).
 
 
 ## Создание бота в [Telegram](https://telegram.org/)
