@@ -1,9 +1,9 @@
 import logging
+import os
 from logging import Handler, LogRecord
 
+import redis
 import telegram
-
-from redis_db import db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,8 @@ class TelegramBotHandler(Handler):
         )
 
 
-def get_quiz_questions_and_answers_from_file():
-    with open('quiz-questions/1vs1200.txt', 'r', encoding='KOI8-R') as my_file:
+def get_quiz_questions_and_answers_from_file(quiz_filepath):
+    with open(quiz_filepath, 'r', encoding='KOI8-R') as my_file:
         file_contents = my_file.read()
     text_lines = file_contents.split('\n')
     quiz_questions_and_answers = {}
@@ -58,7 +58,15 @@ def get_quiz_questions_and_answers_from_file():
     return quiz_questions_and_answers
 
 
-def fetch_correct_answer_by_user_id(update, quiz_questions_and_answers):
-    question = db_connection.get(update.message.from_user["id"])
-    correct_answer = quiz_questions_and_answers[question]
-    return correct_answer
+def fetch_correct_answer_by_user_id(user_id, quiz_questions_and_answers, db_connection):
+    try:
+        question = db_connection.get(user_id)
+        correct_answer = quiz_questions_and_answers[question]
+        return correct_answer
+    except KeyError:
+        return ''
+
+
+def establish_connection_redis_db(redis_host, redis_port, redis_password):
+    db_connection = redis.Redis(host=redis_host, port=redis_port, db=0, password=redis_password, decode_responses=True)
+    return db_connection

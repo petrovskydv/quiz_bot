@@ -6,12 +6,20 @@ from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 
-from redis_db import db_connection
-from utils import TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id
+from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id,
+                   establish_connection_redis_db)
 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-QUIZ = get_quiz_questions_and_answers_from_file()
+load_dotenv()
+
+QUIZ = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
+
+DB_CONNECTION = establish_connection_redis_db(os.environ['REDIS_HOST'],
+                                              os.environ['REDIS_PORT'],
+                                              os.environ['REDIS_PASSWORD'])
+
 QUESTION, ANSWER = range(2)
 
 
@@ -28,14 +36,14 @@ def start(bot, update):
 def handle_new_question_request(bot, update):
     message_text = random.choice(list(QUIZ.keys()))
     update.message.reply_text(message_text)
-    db_connection.set(update.message.from_user["id"], message_text)
+    DB_CONNECTION.set(update.message.from_user["id"], message_text)
     logger.info(f'правильный ответ: {QUIZ[message_text]}')
     return ANSWER
 
 
 def handle_solution_attempt(bot, update):
     answer = update.message.text
-    correct_answer = fetch_correct_answer_by_user_id(update, QUIZ)
+    correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], QUIZ, DB_CONNECTION)
     if answer.strip().lower() == correct_answer.lower():
         message_text = 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос"'
         update.message.reply_text(message_text)
@@ -47,7 +55,7 @@ def handle_solution_attempt(bot, update):
 
 
 def handle_show_answer(bot, update):
-    correct_answer = fetch_correct_answer_by_user_id(update, QUIZ)
+    correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], QUIZ, DB_CONNECTION)
     update.message.reply_text(f'Правильный ответ: {correct_answer}.\nДля следующего вопроса нажми "Новый вопрос"')
     return QUESTION
 
@@ -64,9 +72,6 @@ def error_handler(bot, update, error):
 
 
 def main():
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-    load_dotenv()
     telegram_token = os.environ['TELEGRAM_TOKEN']
     telegram_chat_id = os.environ['TELEGRAM_CHAT_ID']
 
