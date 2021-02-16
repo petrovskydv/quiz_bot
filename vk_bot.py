@@ -47,11 +47,8 @@ def main():
 
     quiz = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
 
-    db_connection = redis.Redis(host=os.environ['REDIS_HOST'],
-                                port=os.environ['REDIS_PORT'],
-                                db=0,
-                                password=os.environ['REDIS_PASSWORD'],
-                                decode_responses=True)
+    db_connection = redis.Redis(host=os.environ['REDIS_HOST'], port=os.environ['REDIS_PORT'], db=0,
+                                password=os.environ['REDIS_PASSWORD'], decode_responses=True)
 
     while True:
         vk_session = vk.VkApi(token=vk_token)

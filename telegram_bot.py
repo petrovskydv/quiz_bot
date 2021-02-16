@@ -9,20 +9,9 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id)
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-
-QUIZ = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
-
-DB_CONNECTION = redis.Redis(host=os.environ['REDIS_HOST'],
-                            port=os.environ['REDIS_PORT'],
-                            db=0,
-                            password=os.environ['REDIS_PASSWORD'],
-                            decode_responses=True)
-
-QUESTION, ANSWER = range(2)
 
 
 def start(bot, update):
@@ -110,4 +99,12 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+    load_dotenv()
+    QUIZ = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
+    DB_CONNECTION = redis.Redis(host=os.environ['REDIS_HOST'], port=os.environ['REDIS_PORT'], db=0,
+                                password=os.environ['REDIS_PASSWORD'], decode_responses=True)
+    QUESTION, ANSWER = range(2)
+
     main()
