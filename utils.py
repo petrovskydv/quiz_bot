@@ -53,7 +53,7 @@ def fetch_correct_answer_by_user_id(user_id, quiz_questions_and_answers, db_conn
         correct_answer = quiz_questions_and_answers[question]
         return correct_answer
     except KeyError:
-        return ''
+        return
 
 
 def establish_connection_redis_db(redis_host, redis_port, redis_password):
