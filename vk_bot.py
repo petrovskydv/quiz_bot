@@ -2,6 +2,7 @@ import logging
 import os
 import random
 
+import redis
 import requests
 import vk_api as vk
 from dotenv import load_dotenv
@@ -9,8 +10,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.utils import get_random_id
 
-from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id,
-                   establish_connection_redis_db)
+from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id)
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,11 @@ def main():
 
     quiz = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
 
-    db_connection = establish_connection_redis_db(os.environ['REDIS_HOST'],
-                                                  os.environ['REDIS_PORT'],
-                                                  os.environ['REDIS_PASSWORD'])
+    db_connection = redis.Redis(host=os.environ['REDIS_HOST'],
+                                port=os.environ['REDIS_PORT'],
+                                db=0,
+                                password=os.environ['REDIS_PASSWORD'],
+                                decode_responses=True)
 
     while True:
         vk_session = vk.VkApi(token=vk_token)
@@ -67,7 +69,7 @@ def main():
                         message_text = random.choice(list(quiz.keys()))
                         db_connection.set(event.user_id, message_text)
 
-                    elif event.text.strip().lower() == correct_answer.lower():
+                    elif event.text.strip().lower() == correct_answer:
                         message_text = 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос"'
 
                     else:

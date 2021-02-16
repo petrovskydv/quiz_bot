@@ -2,12 +2,12 @@ import logging
 import os
 import random
 
+import redis
 from dotenv import load_dotenv
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, RegexHandler
 
-from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id,
-                   establish_connection_redis_db)
+from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,9 +16,11 @@ load_dotenv()
 
 QUIZ = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
 
-DB_CONNECTION = establish_connection_redis_db(os.environ['REDIS_HOST'],
-                                              os.environ['REDIS_PORT'],
-                                              os.environ['REDIS_PASSWORD'])
+DB_CONNECTION = redis.Redis(host=os.environ['REDIS_HOST'],
+                            port=os.environ['REDIS_PORT'],
+                            db=0,
+                            password=os.environ['REDIS_PASSWORD'],
+                            decode_responses=True)
 
 QUESTION, ANSWER = range(2)
 
@@ -44,7 +46,7 @@ def handle_new_question_request(bot, update):
 def handle_solution_attempt(bot, update):
     answer = update.message.text
     correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], QUIZ, DB_CONNECTION)
-    if answer.strip().lower() == correct_answer.lower():
+    if answer.strip().lower() == correct_answer:
         message_text = 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос"'
         update.message.reply_text(message_text)
         return QUESTION
