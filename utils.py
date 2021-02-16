@@ -1,5 +1,4 @@
 import logging
-import os
 from logging import Handler, LogRecord
 
 import redis
@@ -25,37 +24,27 @@ class TelegramBotHandler(Handler):
 def get_quiz_questions_and_answers_from_file(quiz_filepath):
     with open(quiz_filepath, 'r', encoding='KOI8-R') as my_file:
         file_contents = my_file.read()
-    text_lines = file_contents.split('\n')
-    quiz_questions_and_answers = {}
-    is_question = False
-    is_answer = False
-    question_text = ''
-    answer_text = ''
-    for string in text_lines:
-        if string.startswith('Вопрос'):
-            is_question = True
-            continue
-        elif len(string) == 0 and is_answer:
-            answer_text = answer_text.split('.')[0]
-            answer_text = answer_text.split('(')[0].strip()
-            quiz_questions_and_answers[question_text] = answer_text
-            question_text = ''
-            answer_text = ''
-            is_answer = False
-            continue
-        elif len(string) == 0:
-            is_question = False
-            continue
-        elif string.startswith('Ответ'):
-            is_answer = True
-            continue
+    text_lines = file_contents.split('\n\n')
 
-        if is_question:
-            question_text = ' '.join([question_text, string])
-        if is_answer:
-            answer_text = ' '.join([answer_text, string.strip()])
+    quiz_questions_and_answers = {}
+    question_text = ''
+    for string in text_lines:
+        if string.startswith('Вопрос') or string.startswith('\nВопрос'):
+            question_text = fetch_text(string)
+        elif string.startswith('Ответ'):
+            answer_text = fetch_text(string)
+            answer_text = answer_text.split('.')[0]
+            answer_text = answer_text.split('(')[0].strip().lower()
+            quiz_questions_and_answers[question_text] = answer_text
+
     logger.info('загрузили вопросы и ответы')
     return quiz_questions_and_answers
+
+
+def fetch_text(string):
+    text = string[string.find('\n', 1) + 1:]
+    text = ''.join(text.split('\n'))
+    return text
 
 
 def fetch_correct_answer_by_user_id(user_id, quiz_questions_and_answers, db_connection):
