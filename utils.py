@@ -33,8 +33,6 @@ def get_quiz_questions_and_answers_from_file(quiz_filepath):
             question_text = fetch_text(string)
         elif string.startswith('Ответ'):
             answer_text = fetch_text(string)
-            answer_text = answer_text.split('.')[0]
-            answer_text = answer_text.split('(')[0].strip().lower()
             quiz_questions_and_answers[question_text] = answer_text
 
     logger.info('загрузили вопросы и ответы')
@@ -51,4 +49,7 @@ def fetch_correct_answer_by_user_id(user_id, quiz_questions_and_answers, db_conn
     with suppress(KeyError):
         question = db_connection.get(user_id)
         correct_answer = quiz_questions_and_answers[question]
+        # берем в качестве ответа только текст перед точкой и скобками
+        correct_answer = correct_answer.split('.')[0]
+        correct_answer = correct_answer.split('(')[0].strip().lower()
         return correct_answer

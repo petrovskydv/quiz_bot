@@ -31,9 +31,9 @@ def handle_new_question_request(bot, update):
 
 
 def handle_solution_attempt(bot, update):
-    answer = update.message.text
+    user_answer = update.message.text
     correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], quiz, db_connection)
-    if answer.strip().lower() == correct_answer:
+    if user_answer.strip().lower() == correct_answer:
         message_text = 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос"'
         update.message.reply_text(message_text)
         return question
