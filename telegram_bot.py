@@ -9,9 +9,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 from utils import (TelegramBotHandler, get_quiz_questions_and_answers_from_file, fetch_correct_answer_by_user_id)
 
-
 logger = logging.getLogger(__name__)
-
 
 
 def start(bot, update):
@@ -21,34 +19,34 @@ def start(bot, update):
     update.message.reply_text(
         'Привет! Я бот для викторин.\nНажмите "Новый вопрос" для начала викторины.\n/cancel - для отмены.',
         reply_markup=reply_markup)
-    return QUESTION
+    return question
 
 
 def handle_new_question_request(bot, update):
-    message_text = random.choice(list(QUIZ.keys()))
+    message_text = random.choice(list(quiz.keys()))
     update.message.reply_text(message_text)
-    DB_CONNECTION.set(update.message.from_user["id"], message_text)
-    logger.info(f'правильный ответ: {QUIZ[message_text]}')
-    return ANSWER
+    db_connection.set(update.message.from_user["id"], message_text)
+    logger.info(f'правильный ответ: {quiz[message_text]}')
+    return answer
 
 
 def handle_solution_attempt(bot, update):
     answer = update.message.text
-    correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], QUIZ, DB_CONNECTION)
+    correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], quiz, db_connection)
     if answer.strip().lower() == correct_answer:
         message_text = 'Правильно! Поздравляю! Для следующего вопроса нажми "Новый вопрос"'
         update.message.reply_text(message_text)
-        return QUESTION
+        return question
     else:
         message_text = 'Неправильно… Попробуй ещё раз'
         update.message.reply_text(message_text)
-        return ANSWER
+        return answer
 
 
 def handle_show_answer(bot, update):
-    correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], QUIZ, DB_CONNECTION)
+    correct_answer = fetch_correct_answer_by_user_id(update.message.from_user["id"], quiz, db_connection)
     update.message.reply_text(f'Правильный ответ: {correct_answer}.\nДля следующего вопроса нажми "Новый вопрос"')
-    return QUESTION
+    return question
 
 
 def cancel(bot, update):
@@ -62,7 +60,15 @@ def error_handler(bot, update, error):
     logger.warning('Update "%s" caused error "%s"', update, error)
 
 
-def main():
+if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+    load_dotenv()
+    quiz = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
+    db_connection = redis.Redis(host=os.environ['REDIS_HOST'], port=os.environ['REDIS_PORT'], db=0,
+                                password=os.environ['REDIS_PASSWORD'], decode_responses=True)
+    question, answer = range(2)
+
     telegram_token = os.environ['TELEGRAM_TOKEN']
     telegram_chat_id = os.environ['TELEGRAM_CHAT_ID']
 
@@ -80,10 +86,10 @@ def main():
         entry_points=[CommandHandler('start', start)],
 
         states={
-            QUESTION: [RegexHandler('^Новый вопрос$', handle_new_question_request),
+            question: [RegexHandler('^Новый вопрос$', handle_new_question_request),
                        CommandHandler('cancel', cancel)],
 
-            ANSWER: [RegexHandler('^Сдаться$', handle_show_answer),
+            answer: [RegexHandler('^Сдаться$', handle_show_answer),
                      MessageHandler(Filters.text, handle_solution_attempt),
                      CommandHandler('cancel', cancel)]
         },
@@ -96,15 +102,3 @@ def main():
     dispatcher.add_error_handler(error_handler)
     updater.start_polling()
     updater.idle()
-
-
-if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-    load_dotenv()
-    QUIZ = get_quiz_questions_and_answers_from_file(os.environ['QUIZ_FILEPATH'])
-    DB_CONNECTION = redis.Redis(host=os.environ['REDIS_HOST'], port=os.environ['REDIS_PORT'], db=0,
-                                password=os.environ['REDIS_PASSWORD'], decode_responses=True)
-    QUESTION, ANSWER = range(2)
-
-    main()
