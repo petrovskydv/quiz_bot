@@ -1,7 +1,7 @@
 import logging
+from contextlib import suppress
 from logging import Handler, LogRecord
 
-import redis
 import telegram
 
 logger = logging.getLogger(__name__)
@@ -48,9 +48,7 @@ def fetch_text(string):
 
 
 def fetch_correct_answer_by_user_id(user_id, quiz_questions_and_answers, db_connection):
-    try:
+    with suppress(KeyError):
         question = db_connection.get(user_id)
         correct_answer = quiz_questions_and_answers[question]
         return correct_answer
-    except KeyError:
-        return
